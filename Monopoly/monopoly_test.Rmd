@@ -1,0 +1,192 @@
+---
+title: "Monoploy Test Cases & Simulation"
+author: "Weijie Yuan"
+output: pdf_document
+---
+
+```{r, error = TRUE}
+source("monopoly_new_code.R")
+```
+
+\pagebreak
+
+# Part 1: Test Cases
+
+### Test Case 1: Space: Go to Jail
+
+```{r, error = TRUE}
+dice <- PresetDice$new(
+  rolls = c(3,4),
+  verbose = TRUE
+)
+set.seed(16)
+player1 <- Player$new(verbose = TRUE, pos = 24)
+monopoly <- SpaceTracker$new(verbose = TRUE)
+
+for(i in 1:1){
+  cat("--- Turn", i,"---\n")
+  take_turn(player1, monopoly)
+  cat("\n")
+}
+
+print(setNames(monopoly$counts, 1:40))
+```
+
+\pagebreak
+
+### Test Case 2: Chance Card and Doubles Tests: Advance to Go, Reading Railroad, Nearest Railroad, Nearest Utility, No Movement
+
+```{r, error = TRUE}
+dice <- PresetDice$new(
+  rolls = c(3,4, 4,3, 1,1, 3,4, 5,3),
+  verbose = TRUE
+)
+set.seed(135)
+chance <- CardDeck$new(chancedeck, verbose = TRUE)
+community <- CardDeck$new(communitydeck, verbose = TRUE)
+player1 <- Player$new(verbose = TRUE)
+monopoly <- SpaceTracker$new(verbose = TRUE)
+
+for(i in 1:4){
+  cat("--- Turn", i,"---\n")
+  take_turn(player1, monopoly)
+  cat("\n")
+}
+
+print(setNames(monopoly$counts, 1:40))
+```
+\pagebreak
+
+### Test Case 3: Multiple doubles. Community Chest.
+```{r, error = TRUE}
+dice <- PresetDice$new(
+  rolls = c(3,3, 2,2, 2,1, 3,1), verbose = TRUE)
+
+player1 <- Player$new(verbose = TRUE)
+monopoly <- SpaceTracker$new(verbose = TRUE)
+for(i in 1:2){
+  cat("--- Turn", i,"---\n")
+  take_turn(player1, monopoly)
+  cat("\n")
+}
+
+print(setNames(monopoly$counts, 1:40))
+```
+
+\pagebreak
+
+### Test Case 4: Doubles three times. Three turns in jail.
+```{r, error = TRUE}
+dice <- PresetDice$new(
+  rolls = c(3,3, 3,3, 3,3, 5,6, 5,6, 5,6),
+  verbose = TRUE
+)
+
+player1 <- Player$new(verbose = TRUE)
+monopoly <- SpaceTracker$new(verbose = TRUE)
+
+for(i in 1:4){
+  cat("--- Turn", i,"---\n")
+  take_turn(player1, monopoly)
+  cat("\n")
+}
+
+print(setNames(monopoly$counts, 1:40))
+```
+
+\pagebreak
+
+### Test Case 5: After going to Jail, player's turn ends immediately. Rolling doubles while in Jail gets player out of jail.
+```{r, error = TRUE}
+dice <- PresetDice$new(
+  rolls = c(3,3, 1,2, 3,3, 3,4),
+  verbose = TRUE
+)
+
+player1 <- Player$new(verbose = TRUE, pos = 25)
+monopoly <- SpaceTracker$new(verbose = TRUE)
+
+for(i in 1:3){
+  cat("--- Turn", i,"---\n")
+  take_turn(player1, monopoly)
+  cat("\n")
+}
+
+print(setNames(monopoly$counts, 1:40))
+```
+
+\pagebreak
+
+### Test Case 6: 20 Predetermined Turns
+
+```{r, error = TRUE}
+dice <- PresetDice$new(
+  rolls = c(6,4, 5,3, 3,5, 4,4, 4,4, 2,2, 4,3, 4,4, 1,4,
+            3,4, 1,2, 3,6, 5,4, 5,5, 1,2, 5,4, 3,3, 6,1,
+            1,1, 2,3, 5,5, 5,4, 4,1, 2,2, 2,4),
+  verbose = TRUE
+)
+set.seed(2)
+chance <- CardDeck$new(chancedeck, verbose = TRUE)
+community <- CardDeck$new(communitydeck, verbose = TRUE)
+# if your chance cards different from mine,
+# check to make sure sample(15) returns the following
+# > set.seed(2)
+# > sample(15)
+#  [1]  5  6 14  8  1 11  9  2  3 10  7 12  4 13 15
+```
+
+
+```{r, error = TRUE}
+player1 <- Player$new(verbose = TRUE)
+monopoly <- SpaceTracker$new(verbose = TRUE)
+
+for(i in 1:20){
+  cat("--- Turn", i,"---\n")
+  take_turn(player1, monopoly)
+  cat("\n")
+}
+
+monopoly$counts
+cbind(gameboard, counts = monopoly$counts)
+```
+
+
+# Part 2: 1000 simulated games
+
+```{r, message = FALSE}
+library(dplyr)
+```
+
+
+```{r, error = TRUE}
+## Use non-verbose random dice for Part 2
+set.seed(2)
+chance <- CardDeck$new(chancedeck, verbose = FALSE)
+community <- CardDeck$new(communitydeck, verbose = FALSE)
+dice <- RandomDice$new()
+
+player1 <- Player$new(verbose = FALSE)
+player2 <- Player$new(verbose = FALSE)
+monopoly <- SpaceTracker$new(verbose = FALSE)
+
+for(g in 1:1000) {
+  if(g %% 100 == 0) {
+    cat("#### SIMULATING GAME", g, "##### \n")
+  }
+  for(i in 1:150){
+    take_turn(player1, monopoly)
+    take_turn(player2, monopoly)
+  }
+}
+
+print(setNames(monopoly$counts, 1:40))
+barplot(monopoly$counts)
+
+results <- cbind(gameboard, tally = monopoly$counts)
+results <- cbind(results, rel = monopoly$counts/sum(monopoly$counts))
+print(results)
+
+arrange(results, desc(tally))
+```
+
